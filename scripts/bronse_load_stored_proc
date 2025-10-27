@@ -1,0 +1,104 @@
+USE [Datawarehouse]
+GO
+/****** Object:  StoredProcedure [bronze].[load_bronze]    Script Date: 10/25/2025 11:36:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER   PROCEDURE [bronze].[load_bronze] AS
+
+BEGIN
+DECLARE @start_Time DATETIME,@end_Time DATETIME
+
+BEGIN TRY
+        SET @start_Time =GETDATE()
+		TRUNCATE TABLE bronze.crm_cust_info;
+		BULK INSERT bronze.crm_cust_info 
+		FROM 'C:\Datawarehouse\sql-data-warehouse-project\datasets\source_crm\cust_info.csv'
+		WITH(
+		FIRSTROW = 2,
+		FIELDTERMINATOR = ',',
+		TABLOCK
+		);
+		--select count(*) from bronze.crm_cust_info
+		SET @end_Time = GETDATE()
+		PRINT ' LOAD DURATION is : '+ CAST(DATEDIFF(second,@end_Time,@start_Time) AS NVARCHAR) + ' Seconds';
+
+		SET @start_Time =GETDATE()
+		TRUNCATE TABLE bronze.crm_prod_info;
+		BULK INSERT bronze.crm_prod_info 
+		FROM 'C:\Datawarehouse\sql-data-warehouse-project\datasets\source_crm\prd_info.csv'
+		WITH(
+		FIRSTROW = 2,
+		FIELDTERMINATOR = ',',
+		TABLOCK
+		);
+		--select count(*) from bronze.crm_prod_info
+		SET @end_Time = GETDATE()
+		PRINT ' LOAD DURATION is : '+ CAST(DATEDIFF(second,@end_Time,@start_Time) AS NVARCHAR) + ' Seconds';
+
+		  SET @start_Time =GETDATE()
+		TRUNCATE TABLE bronze.crm_sales_details;
+		BULK INSERT bronze.crm_sales_details 
+		FROM 'C:\Datawarehouse\sql-data-warehouse-project\datasets\source_crm\sales_details.csv'
+		WITH(
+		FIRSTROW = 2,
+		FIELDTERMINATOR = ',',
+		TABLOCK
+		);
+		--select count(*) from bronze.crm_sales_details
+		SET @end_Time = GETDATE()
+		PRINT ' LOAD DURATION is : '+ CAST(DATEDIFF(second,@end_Time,@start_Time) AS NVARCHAR) + ' Seconds';
+
+
+		  SET @start_Time =GETDATE()
+		TRUNCATE TABLE bronze.erp_custAZ12;
+		BULK INSERT bronze.erp_custAZ12 
+		FROM 'C:\Datawarehouse\sql-data-warehouse-project\datasets\source_erp\CUST_AZ12.csv'
+		WITH(
+		FIRSTROW = 2,
+		FIELDTERMINATOR = ',',
+		TABLOCK
+		);
+		--select count(*) from bronze.erp_custAZ12
+		SET @end_Time = GETDATE()
+		PRINT ' LOAD DURATION is : '+ CAST(DATEDIFF(second,@end_Time,@start_Time) AS NVARCHAR) + ' Seconds';
+
+		  SET @start_Time =GETDATE()
+		TRUNCATE TABLE bronze.erp_LOC_A101;
+		BULK INSERT bronze.erp_LOC_A101 
+		FROM 'C:\Datawarehouse\sql-data-warehouse-project\datasets\source_erp\LOC_A101.csv'
+		WITH(
+		FIRSTROW = 2,
+		FIELDTERMINATOR = ',',
+		TABLOCK
+		);
+		--select count(*) from bronze.erp_LOC_A101
+		SET @end_Time = GETDATE()
+		PRINT ' LOAD DURATION is : '+ CAST(DATEDIFF(second,@end_Time,@start_Time) AS NVARCHAR) + ' Seconds';
+
+		  SET @start_Time =GETDATE()
+		TRUNCATE TABLE bronze.erp_PX_CAT_G1V2;
+		BULK INSERT bronze.erp_PX_CAT_G1V2 
+		FROM 'C:\Datawarehouse\sql-data-warehouse-project\datasets\source_erp\PX_CAT_G1V2.csv'
+		WITH(
+		FIRSTROW = 2,
+		FIELDTERMINATOR = ',',
+		TABLOCK
+		);
+		--select count(*) from bronze.erp_PX_CAT_G1V2
+		SET @end_Time = GETDATE()
+		PRINT ' LOAD DURATION is : '+ CAST(DATEDIFF(second,@end_Time,@start_Time) AS NVARCHAR) + ' Seconds';
+
+END TRY
+		BEGIN CATCH
+		  PRINT '========================================'
+		  PRINT 'Error Occured using Bronze Layer'
+		  PRINT 'Error Message' + ERROR_MESSAGE()
+		  PRINT 'Error Number' + CAST(ERROR_NUMBER() AS NVARCHAR(15))
+		  PRINT '================================================='
+		END CATCH
+END
+
+EXEC [bronze].[load_bronze]
