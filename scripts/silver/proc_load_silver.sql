@@ -104,7 +104,7 @@ BEGIN
             CASE
                 WHEN UPPER(TRIM(cst_gndr)) = 'M' THEN 'Male'
                 WHEN UPPER(TRIM(cst_gndr)) = 'F' THEN 'Female'
-                ELSE 'Unknown'
+                ELSE 'n/a'
             END AS cst_gndr,
             cst_create_date
         FROM (
@@ -114,6 +114,33 @@ BEGIN
             FROM bronze.crm_cust_info
         ) t
         WHERE row_num = 1;  -- keep the most recent record per customer
+        SET @end_time = GETDATE();
+        PRINT '>> Load duration: ' + CAST(DATEDIFF(second, @start_time, @end_time) AS NVARCHAR(10)) + ' seconds';
+
+        PRINT '>> Loading silver.crm_prod_info';
+        SET @start_time = GETDATE();
+        TRUNCATE TABLE silver.crm_prod_info;
+        INSERT INTO silver.crm_prod_info (
+            prd_id,
+            cat_id,
+            prd_key,
+            prd_nm,
+            prd_cost,
+            prd_line,
+            prd_start_date,
+            prd_end_dt
+        )
+        SELECT
+            prd_id,
+            REPLACE(SUBSTRING(prd_key, 1, 5), '-', '_') AS cat_id,   -- matches erp_PX_CAT_G1V2.ID
+            SUBSTRING(prd_key, 7, LEN(prd_key))         AS prd_key,  -- matches crm_sales_details.sls_prd_key
+            prd_nm,
+            prd_cost,
+            prd_line,
+            prd_start_date,
+            -- a product version ends the day before its next version starts
+            DATEADD(day, -1, LEAD(prd_start_date) OVER (PARTITION BY prd_key ORDER BY prd_start_date)) AS prd_end_dt
+        FROM bronze.crm_prod_info;
         SET @end_time = GETDATE();
         PRINT '>> Load duration: ' + CAST(DATEDIFF(second, @start_time, @end_time) AS NVARCHAR(10)) + ' seconds';
 

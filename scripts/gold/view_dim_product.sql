@@ -4,7 +4,8 @@ Gold View: gold.dim_product
 ===============================================================================
 Purpose:
     Product dimension combining CRM product data with ERP category,
-    subcategory and maintenance attributes.
+    subcategory and maintenance attributes. Only the current version of
+    each product is included.
 ===============================================================================
 */
 
@@ -26,5 +27,6 @@ SELECT
     prd.prd_start_date                                           AS product_start_date
 FROM silver.crm_prod_info prd
 LEFT JOIN silver.erp_PX_CAT_G1V2 px
-    ON prd.cat_id = px.ID;
+    ON prd.cat_id = px.ID
+WHERE prd.prd_end_dt IS NULL;  -- current product versions only, so product_number is unique
 GO
