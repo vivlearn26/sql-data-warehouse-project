@@ -1,0 +1,97 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "triggers": {
+      "When_a_HTTP_request_is_received": {
+        "type": "Request",
+        "kind": "Http",
+        "description": "Looks up one customer in the data warehouse by customer number and returns their profile (name, gender, marital status, country, birth date) and lifetime order count, sales and first/last order dates.",
+        "inputs": {
+          "method": "POST",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "customer_number": {
+                "type": "string",
+                "description": "The customer number (customer key from the CRM), for example 'AW00011000'."
+              }
+            },
+            "required": [
+              "customer_number"
+            ]
+          }
+        }
+      }
+    },
+    "actions": {
+      "Execute_stored_procedure": {
+        "type": "ApiConnection",
+        "inputs": {
+          "host": {
+            "connection": {
+              "referenceName": "sql"
+            }
+          },
+          "method": "post",
+          "body": {
+            "customer_number": "@{triggerBody()?['customer_number']}"
+          },
+          "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('default'))},@{encodeURIComponent(encodeURIComponent('default'))}/procedures/@{encodeURIComponent(encodeURIComponent('[gold].[usp_get_customer]'))}"
+        },
+        "runAfter": {},
+        "runtimeConfiguration": {
+          "secureData": {
+            "properties": [
+              "outputs"
+            ]
+          }
+        }
+      },
+      "Response_success": {
+        "type": "Response",
+        "kind": "Http",
+        "inputs": {
+          "statusCode": 200,
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": "@coalesce(body('Execute_stored_procedure')?['ResultSets']?['Table1'], json('[]'))"
+        },
+        "runAfter": {
+          "Execute_stored_procedure": [
+            "Succeeded"
+          ]
+        },
+        "runtimeConfiguration": {
+          "secureData": {
+            "properties": [
+              "inputs"
+            ]
+          }
+        }
+      },
+      "Response_error": {
+        "type": "Response",
+        "kind": "Http",
+        "inputs": {
+          "statusCode": 500,
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "error": "@{coalesce(body('Execute_stored_procedure')?['message'], 'The warehouse query failed.')}"
+          }
+        },
+        "runAfter": {
+          "Execute_stored_procedure": [
+            "Failed",
+            "TimedOut"
+          ]
+        }
+      }
+    },
+    "outputs": {}
+  },
+  "kind": "Stateful"
+}

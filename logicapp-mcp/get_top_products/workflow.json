@@ -1,0 +1,90 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "triggers": {
+      "When_a_HTTP_request_is_received": {
+        "type": "Request",
+        "kind": "Http",
+        "description": "Returns the best-selling products from the data warehouse ranked by total sales amount, with optional year and product category filters.",
+        "inputs": {
+          "method": "POST",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "top_n": {
+                "type": "integer",
+                "description": "How many products to return, from 1 to 100. Defaults to 10."
+              },
+              "year": {
+                "type": "integer",
+                "description": "Order year to filter on, for example 2013. Omit or use 0 for all years."
+              },
+              "category": {
+                "type": "string",
+                "description": "Product category to filter on, for example 'Bikes', 'Components', 'Clothing' or 'Accessories'. Omit for all categories."
+              }
+            }
+          }
+        }
+      }
+    },
+    "actions": {
+      "Execute_stored_procedure": {
+        "type": "ApiConnection",
+        "inputs": {
+          "host": {
+            "connection": {
+              "referenceName": "sql"
+            }
+          },
+          "method": "post",
+          "body": {
+            "top_n": "@coalesce(triggerBody()?['top_n'], 10)",
+            "year": "@coalesce(triggerBody()?['year'], 0)",
+            "category": "@{coalesce(triggerBody()?['category'], '')}"
+          },
+          "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('default'))},@{encodeURIComponent(encodeURIComponent('default'))}/procedures/@{encodeURIComponent(encodeURIComponent('[gold].[usp_get_top_products]'))}"
+        },
+        "runAfter": {}
+      },
+      "Response_success": {
+        "type": "Response",
+        "kind": "Http",
+        "inputs": {
+          "statusCode": 200,
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": "@coalesce(body('Execute_stored_procedure')?['ResultSets']?['Table1'], json('[]'))"
+        },
+        "runAfter": {
+          "Execute_stored_procedure": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Response_error": {
+        "type": "Response",
+        "kind": "Http",
+        "inputs": {
+          "statusCode": 500,
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "error": "@{coalesce(body('Execute_stored_procedure')?['message'], 'The warehouse query failed.')}"
+          }
+        },
+        "runAfter": {
+          "Execute_stored_procedure": [
+            "Failed",
+            "TimedOut"
+          ]
+        }
+      }
+    },
+    "outputs": {}
+  },
+  "kind": "Stateful"
+}
