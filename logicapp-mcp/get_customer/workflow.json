@@ -39,7 +39,14 @@
           },
           "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('default'))},@{encodeURIComponent(encodeURIComponent('default'))}/procedures/@{encodeURIComponent(encodeURIComponent('[gold].[usp_get_customer]'))}"
         },
-        "runAfter": {}
+        "runAfter": {},
+        "runtimeConfiguration": {
+          "secureData": {
+            "properties": [
+              "outputs"
+            ]
+          }
+        }
       },
       "Response_success": {
         "type": "Response",
@@ -55,6 +62,13 @@
           "Execute_stored_procedure": [
             "Succeeded"
           ]
+        },
+        "runtimeConfiguration": {
+          "secureData": {
+            "properties": [
+              "inputs"
+            ]
+          }
         }
       },
       "Response_error": {

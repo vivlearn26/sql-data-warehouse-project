@@ -101,3 +101,4 @@ Full guide: [Set up Standard logic apps as remote MCP servers](https://learn.mic
    - "Show me customer AW00011000."
 
 Every tool call appears as a workflow run in the logic app's run history.
+`get_customer` uses secure outputs and inputs, so customer profiles are hidden in run history.
